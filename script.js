@@ -69,12 +69,23 @@ if ('webkitSpeechRecognition' in window) {
     recognition.lang = 'en-US';
 } else {
     voiceInputBtn.style.display = 'none';
-    console.warn('Speech recognition not supported');
 }
 
 // Speech synthesis setup
 const synthesis = window.speechSynthesis;
-let voiceEnabled = false;
+let voiceEnabled = true;
+let voices = [];
+
+// Load voices immediately and set up change listener
+function loadVoices() {
+    voices = synthesis.getVoices();
+    console.log('Available voices:', voices.map(v => v.name).join(', '));
+}
+
+loadVoices();
+if (synthesis.onvoiceschanged !== undefined) {
+    synthesis.onvoiceschanged = loadVoices;
+}
 
 // Voice input handling
 if (recognition) {
@@ -119,68 +130,62 @@ toggleVoiceBtn.addEventListener('click', () => {
     }
 });
 
-// Function to find the most suitable female voice
-function findBestFemaleVoice(voices) {
-    // Priority list for voice selection
-    const preferredVoices = [
-        'Samantha',      // macOS female voice
-        'Karen',         // macOS female voice
-        'Victoria',      // Windows female voice
-        'Microsoft Zira' // Windows female voice
-    ];
-
-    // First try to find one of our preferred voices
-    for (const preferredName of preferredVoices) {
-        const voice = voices.find(v => v.name.includes(preferredName));
-        if (voice) return voice;
-    }
-
-    // If no preferred voice found, try to find any female voice
-    const femaleVoice = voices.find(v => 
-        v.name.includes('female') || 
-        v.name.includes('woman') ||
-        (v.name.includes('en-US') && !v.name.includes('Male'))
-    );
-    
-    if (femaleVoice) return femaleVoice;
-
-    // Fallback to any English voice
-    return voices.find(v => v.lang.startsWith('en-')) || voices[0];
-}
-
 function speakText(text) {
     if (!voiceEnabled) return;
     
-    // Remove HTML tags and references for speech
-    const cleanText = text.replace(/<[^>]*>/g, '').replace(/Source:.*$/, '');
-    
-    // Cancel any ongoing speech
-    synthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    
-    // Adjust speech parameters for a more sultry, slower voice
-    utterance.rate = 0.85;     // Slower speed (normal is 1)
-    utterance.pitch = 0.9;     // Slightly lower pitch for a sultry tone
-    utterance.volume = 1;      // Full volume
-
-    // Get available voices and set the best female voice
-    let voices = synthesis.getVoices();
-    if (voices.length > 0) {
-        utterance.voice = findBestFemaleVoice(voices);
+    try {
+        // Remove HTML tags and references
+        const cleanText = text.replace(/<[^>]*>/g, '').replace(/Source:.*$/, '');
+        console.log('Speaking text:', cleanText);
+        
+        // Create utterance
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        // Get current voices if not loaded
+        if (voices.length === 0) {
+            voices = synthesis.getVoices();
+        }
+        
+        // Find female voice
+        const femaleVoice = voices.find(voice => 
+            voice.name.includes('Samantha') || 
+            voice.name.includes('Female') || 
+            (voice.name.includes('en-US') && !voice.name.includes('Male'))
+        );
+        
+        if (femaleVoice) {
+            console.log('Using voice:', femaleVoice.name);
+            utterance.voice = femaleVoice;
+        } else {
+            console.log('No female voice found, using default voice');
+        }
+        
+        // Set properties for sultry voice
+        utterance.rate = 0.85;  // Slower
+        utterance.pitch = 0.9;  // Slightly lower
+        utterance.volume = 1;
+        
+        // Add event handlers
+        utterance.onstart = () => console.log('Speech started');
+        utterance.onend = () => console.log('Speech ended');
+        utterance.onerror = (e) => console.error('Speech error:', e);
+        
+        // Cancel any ongoing speech
+        synthesis.cancel();
+        
+        // Speak after a short delay to ensure browser is ready
+        setTimeout(() => {
+            try {
+                synthesis.speak(utterance);
+            } catch (error) {
+                console.error('Speech synthesis error:', error);
+            }
+        }, 100);
+        
+    } catch (error) {
+        console.error('Speech synthesis error:', error);
     }
-
-    synthesis.speak(utterance);
 }
-
-// Event listeners for text input
-sendButton.addEventListener('click', handleUserInput);
-userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleUserInput();
-    }
-});
 
 function handleUserInput() {
     const message = userInput.value.trim();
@@ -192,10 +197,10 @@ function handleUserInput() {
 
     // Generate and display AI response
     const response = generateResponse(message);
-    setTimeout(() => {
-        displayMessage(response, 'ai');
-        speakText(response);
-    }, 1000);
+    displayMessage(response, 'ai');
+    
+    // Speak the response
+    speakText(response);
 }
 
 function displayMessage(message, sender) {
@@ -210,7 +215,6 @@ function generateResponse(userMessage) {
     const message = userMessage.toLowerCase();
     let category = 'general';
     
-    // Determine message category
     if (message.includes('anxiety') || message.includes('anxious') || message.includes('worry')) {
         category = 'anxiety';
     } else if (message.includes('depress') || message.includes('sad') || message.includes('hopeless')) {
@@ -219,25 +223,41 @@ function generateResponse(userMessage) {
         category = 'stress';
     }
 
-    // Get random template and reference for the category
     const templates = responseTemplates[category];
     const references = scientificReferences[category];
     const template = templates[Math.floor(Math.random() * templates.length)];
     const reference = references[Math.floor(Math.random() * references.length)];
 
-    // Construct response with reference
     const response = template.replace('{reference}', reference.text);
     return response + `<div class="reference">Source: ${reference.source}</div>`;
 }
 
-// Initial greeting
-window.addEventListener('load', () => {
-    const initialMessage = "Hello! I'm an AI Mental Health Assistant. I can provide information based on scientific research about mental health topics. Please note that I'm not a replacement for professional help. You can type your question or click the microphone icon to speak. How can I assist you today?";
-    displayMessage(initialMessage, 'ai');
-    speakText(initialMessage);
+// Event listeners
+sendButton.addEventListener('click', handleUserInput);
+userInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleUserInput();
+    }
 });
 
-// Handle voices loading (needed for some browsers)
-synthesis.onvoiceschanged = () => {
-    voices = synthesis.getVoices();
-};
+// Initialize the application
+function initializeApp() {
+    // Enable voice and update UI
+    voiceEnabled = true;
+    toggleVoiceBtn.classList.add('active');
+    
+    // Display initial greeting
+    const initialMessage = "Hello! I'm an AI Mental Health Assistant. I can provide information based on scientific research about mental health topics. Please note that I'm not a replacement for professional help. You can type your question or click the microphone icon to speak. How can I assist you today?";
+    
+    displayMessage(initialMessage, 'ai');
+    
+    // Add click handler to start speaking
+    document.addEventListener('click', function initSpeech() {
+        speakText(initialMessage);
+        document.removeEventListener('click', initSpeech);
+    }, { once: true });
+}
+
+// Start the application when the DOM is ready
+document.addEventListener('DOMContentLoaded', initializeApp);
