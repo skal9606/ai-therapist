@@ -1,0 +1,178 @@
+:root {
+    --primary-color: #4A90E2;
+    --background-color: #F5F8FA;
+    --text-color: #2C3E50;
+    --light-gray: #E1E8ED;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    margin-bottom: 30px;
+}
+
+h1 {
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.disclaimer {
+    background-color: #FFF3CD;
+    border: 1px solid #FFEEBA;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    font-size: 0.9em;
+}
+
+.chat-container {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+#chat-messages {
+    height: 400px;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.message {
+    margin-bottom: 20px;
+    padding: 10px 15px;
+    border-radius: 5px;
+    max-width: 80%;
+}
+
+.user-message {
+    background-color: var(--primary-color);
+    color: white;
+    margin-left: auto;
+}
+
+.ai-message {
+    background-color: var(--light-gray);
+    margin-right: auto;
+}
+
+.reference {
+    font-size: 0.8em;
+    font-style: italic;
+    margin-top: 5px;
+    color: #666;
+}
+
+.input-area {
+    padding: 20px;
+    border-top: 1px solid var(--light-gray);
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#user-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--light-gray);
+    border-radius: 5px;
+    resize: none;
+    height: 60px;
+    font-family: inherit;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+button:hover {
+    background-color: #357ABD;
+}
+
+#voice-input-btn, #toggle-voice {
+    padding: 10px;
+    background-color: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+#voice-input-btn:hover, #toggle-voice:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+#voice-input-btn.recording {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.voice-status {
+    text-align: center;
+    padding: 10px;
+    font-size: 0.9em;
+    color: #666;
+    min-height: 20px;
+}
+
+#toggle-voice.active {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    color: white;
+}
+
+svg {
+    width: 20px;
+    height: 20px;
+}
